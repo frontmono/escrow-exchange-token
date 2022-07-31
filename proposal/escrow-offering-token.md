@@ -139,20 +139,10 @@ interface ERC165 {
 ```
 
 ## Rationale
-The standard proposes following 3 major functions on top of the ERC-20 standard. Let's discuss the rationale for each.
-
-**1. escrowPurchase**
-
-aaa
-
-**2. escrowRefund**
-
-aaa
-
-**3. escrowFinish**
-
-aaa
-
+The standard proposes interfaces on top of the ERC-20 standard.
+Each functions should include constraint check logic.
+In case of payable token, should invoke ERC165 interface before their own logic.
+In case of issuer token, should implemented internal constraint logic such as period, maximum investors, etc.
 
 
 ## Backwards Compatibility
