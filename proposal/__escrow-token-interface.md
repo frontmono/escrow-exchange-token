@@ -35,7 +35,16 @@ Until STO process is finalized(Success or Failed), there are following complianc
 
 ## Motivation
 
-A standard interface allows restrictions for issuer and buyers. We provide for simple interface to issuer token creator and payable token creator. 
+A standard interface allows restrictions for issuer and buyers. We provide for simple interface to issuer token creator and payable token creator.
+
+### ERC-2001: Escrow Offering Token
+Should provide interface(based on ERC-165) for payable token.
+The payable should call this interface contract on every transaction.
+
+### ERC-2002: Payable token
+Provide additional interface to exchange with ERC-2001 token based on ERC-20 standards 
+
+
 
 
 ## Specification
