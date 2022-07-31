@@ -24,9 +24,9 @@ We have suggest this process make possible in on-chain network with payable curr
 
 ## Motivation
 
-A standard interface allows payable token contract to interface with ERC-2000 interface within smart contracts.
+A standard interface allows payable token contract to interact with ERC-2000 interface within smart contracts.
 
-Any payable token contract call ERC-2000 interface to exchange with issuing token based on rules built in ERC-2000 smart contract to validate transactions.
+Any payable token contract call ERC-2000 interface to exchange with issuing token based on constraint built in ERC-2000 smart contract to validate transactions.
 
 Note: Refund is only available in certain conditions(ex: period) based on implementations.
 
@@ -38,7 +38,6 @@ The following stand interfaces should be provided on ERC-2000 interface.
   - MUST support querying texted based compliance for transactions. ex: period, max number of buyers, minimum and maximum tokens to hold, refund period, etc.
   - exchange(or purchase) with success or failed return code.
   - refund(or cancel transaction) with success or failed return code.
-  - TBD
 
 
 ## Specification
@@ -83,9 +82,24 @@ interface ERC2001 /* is ERC165 */ {
     /// simple query to return simple description of compilance.
     function escrowComplainaceDescription() external view returns (string _description);
 
-
     /// simple query to return string based on error code. if code is zero,return can be 'success'
     function escrowErrorCodeDescription(bytes4 _code) external view returns (string _description);
+
+
+    /// @notice create escrow account.
+    /// @dev
+    ///   - created escrow account of [msg.sender].
+    ///   - if escrow id is 0, this means in payable contract. payable contract will generate unique ID.
+    ///   - in case of issuing contract, [msg.sender] should have enough balance of total supply. and this supply is locked until escrow account is closed.
+    /// @param
+    ///   - _escrowId: escrow id
+    ///   - _period: escrow period in seconds
+    ///   - _totalSupply: number of tokens to be exchange
+    ///   - _exchangeRate: exchange rate of 1-payable token vs N-issuing token
+    /// @return escrow ID.
+    /// @Note: other constraint can be implemented on implementation.
+    function escrowAccountCreate(uint256 _period, uint256 _totalSupply, uint256 _exchangeRate) external payable returns (uint256);
+
 
     /// @notice exchange tokens from owner of _escrowId and from address.
     /// @dev
@@ -122,8 +136,9 @@ interface ERC2001 /* is ERC165 */ {
     /// @param
     ///   - _escrowId: escrow id
     ///   - _code: 0  is success, otherwise, issuer cancel(or close) this escrow account
+    ///   - _hash: if code is 0, this hash should be match with escrow balance
     /// @return reason code. 0 is success, otherwise is failure code.
-    function escrowFinish(uint256 _escrowId, bytes4 _code) external payable returns (bytes4);
+    function escrowFinish(uint256 _escrowId, bytes4 _code, uint256 _hash) external payable returns (bytes4);
 
 }
 
@@ -144,6 +159,36 @@ Each functions should include constraint check logic.
 In case of payable token, should invoke ERC165 interface before their own logic.
 In case of issuer token, should implemented internal constraint logic such as period, maximum investors, etc.
 
+Let's discuss following functions.
+
+1. **`escrowAccountCreate`**
+
+The issuing token holder can call this function. The parameters are very basic(period, total supply and exchange rate).
+Other constrains can be implemented on function body. Function body should implements following.
+- create temporary balance sheet for escrow process
+- credit own token supply on escrow account. Owner could not use this fund until escrow process is finished.(In other words, LOCKED)
+- add constraint rules on this escrow account.
+
+When this process is success, can call specific function on payable token contract. This function create similar as above but apply contract address.
+Payable contract does not have constraints rules(because it is general valuable token), but every transactions should call issuing token function to validate constraints.
+
+2. **`escrowPurchase & escrowRefund`**
+
+The buyer calls this function in payable token only. Smart contract code calls issuer contract via ERC165 interface, and return code is 0(Success), can continue process(ex: update escrow balance).
+When fund is deposit on escrow balance sheet, this token is locked.
+For example, the buyer has 100 payable tokens and purchased 1000 issuing token by 10 payable token(in case of exchange rate is 100).
+In buyers wallet balance should shows 90 token. If escrow failed, escrow process should return 10 token to buyer.
+If escrow process is successfully done, the buyer should have 1000 token balance on issuer contract, but fixed 90 tokens in payable token.
+
+3. **`escrowFinish`**
+
+Only escrow creator should call this function.
+
+
+## Security concern
+
+- The buyer should be available refund anytime until escrow finished. Because if issuer does not call `escrowFinish` forever, there is no way to get it back. Developer should be careful this logic.
+- Should deal with invalid call of functions. some functions can be invoked by user directly or should be called by payable contract code via ERC165 interface. So make sure [msg.sender] is user or contract.
 
 ## Backwards Compatibility
 
