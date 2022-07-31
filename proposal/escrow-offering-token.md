@@ -140,11 +140,17 @@ interface ERC165 {
 
 ## Rationale
 The standard proposes following 3 major functions on top of the ERC-20 standard. Let's discuss the rationale for each.
+
 **1. escrowPurchase**
+
 aaa
+
 **2. escrowRefund**
+
 aaa
+
 **3. escrowFinish**
+
 aaa
 
 
