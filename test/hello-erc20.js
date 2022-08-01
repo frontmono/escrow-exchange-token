@@ -1,6 +1,6 @@
 const HelloERC20 = artifacts.require('./examples/HelloERC20')
 
-contract('SimpleRestrictedToken', accounts => {
+contract('BasicToken', accounts => {
     const [owner, user1, user2] = accounts
     let initalBalance
     let token
