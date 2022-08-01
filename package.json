@@ -3,19 +3,17 @@
     "version": "1.0.0",
     "description": "An easily extendable standard for exchange(or invest) token with escrow restrictions.",
     "main": "index.js",
-    "directories": {
-        "test": "truffle test",
-        "compile": "truffle compile"
-    },
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "truffle test",
+        "compile": "truffle compile",
+        "migrate": "truffle migrate"
     },
     "repository": {
         "type": "git",
         "url": "git+https://github.com/frontmono/escrow-exchange-token.git"
     },
     "author": "",
-    "license": "ISC",
+    "license": "MIT",
     "bugs": {
         "url": "https://github.com/frontmono/escrow-exchange-token/issues"
     },
