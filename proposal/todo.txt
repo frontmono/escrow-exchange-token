@@ -1,0 +1,12 @@
+
+1. confirm ERC numbering. There is no ERC-20R like standard. must be number
+2. title: now `Escrow Issuing Token Standard` but ?
+3. Copyright
+4. Should test with simple test case with full sol functions. because of security, should make sure caller(msg.sender) is contract or sender
+
+
+add constraint rules on this escrow account.
+
+
+
+create temporary balance sheet for escrow process

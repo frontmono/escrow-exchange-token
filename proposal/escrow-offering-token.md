@@ -1,6 +1,6 @@
 ---
 eip: 2000
-title: Escrow Issuing Token Standard
+title: Refundable Token Standard
 author: John01 Any <01@example.com>, John02 Any <02@example.com>
 type: Standards Track
 category: ERC
@@ -10,7 +10,7 @@ created: 2022-01-31
 
 ## Simple Summary
 
-A standard interface for Refundable Security Token.
+A standard interface for Refundable Token.
 
 ## Abstract
 
@@ -165,9 +165,11 @@ Let's discuss following functions.
 
 The issuing token holder can call this function. The parameters are very basic(period, total supply and exchange rate).
 Other constrains can be implemented on function body. Function body should implements following.
-- create temporary balance sheet for escrow process
-- credit own token supply on escrow account. Owner could not use this fund until escrow process is finished.(In other words, LOCKED)
-- add constraint rules on this escrow account.
+
+- add constraint rules on this escrow account. basic rule(ex: period) must be implemented.
+- create temporary balance sheet for escrow process.
+- credit own token supply on escrow account. Owner could not use this fund until escrow process is finished.(In other words, LOCKED).
+
 
 When this process is success, can call specific function on payable token contract. This function create similar as above but apply contract address.
 Payable contract does not have constraints rules(because it is general valuable token), but every transactions should call issuing token function to validate constraints.
