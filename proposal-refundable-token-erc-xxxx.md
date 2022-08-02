@@ -14,10 +14,7 @@ A standard interface for Refundable Token.
 
 ## Abstract
 
-The value of security token can be number of linked currency.
-For example, in STO process, issuer can be invested with real currency from buyers(or investors) and transfers issuing tokens to buyers. If offering process is successfully completed, there is no issue.
-But buyers can change their plan, or offering is failed(or canceled) cause of mis-fitting the compliance rules or other rules.
-There is no way guarantee to payback(refund) to buyer with real currency in on-chain network.
+The value of security token can be total sum of linked currency’s value. For example, in STO process, issuer can be invested with real currency from buyers(or investors) and transfers issuing tokens to buyers. If offering process is successfully completed, there is no issue. But buyers can change their plan, or offering is failed(or canceled) cause of mis-fitting the compliance rules or other rules. There is no way guarantee to payback(refund) to buyer in on-chain network.
 
 We have suggest this process make possible in on-chain network with payable currency like token(ex: USDT)
 
@@ -28,7 +25,7 @@ A standard interface allows payable token contract to interact with ERC-2000 int
 
 Any payable token contract call ERC-2000 interface to exchange with issuing token based on constraint built in ERC-2000 smart contract to validate transactions.
 
-Note: Refund is only available in certain conditions(ex: period) based on implementations.
+Note: Refund is only available in certain conditions(ex: period, oracle value etc) based on implementations.
 
 ## Requirements
 
