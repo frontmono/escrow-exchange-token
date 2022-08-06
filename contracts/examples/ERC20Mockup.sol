@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 
-contract ERC20Mockup {
+contract ERC20EscrowMockup {
     mapping(address => uint256) _balances;
     uint256 _totalSupply;
     address _owner;

@@ -1,23 +1,23 @@
-const ERCEscrowMockup = artifacts.require('./examples/ERCEscrowMockup.sol')
+const ErcEscrowAccount = artifacts.require('./examples/ErcEscrowAccount')
+const ERC20EscrowMockup = artifacts.require('./examples/ERC20EscrowMockup')
 
-contract('ERC2000BuyerMockup', accounts => {
-    const [owner, user1, user2] = accounts
-    let initalBalance
-    let token
+
+const util = require('util')
+contract('ERCEscrowMockup', accounts => {
+    const [creator, seller, buyer01, buyer02, ...others] = accounts
+
+    let contracts
+
     before(async () => {
-        token = await ERCEscrowMockup.new(owner, 10000)
-        initalBalance = await token.balanceOf(owner)
-    })
+      const seller = await ERC20EscrowMockup.new()
+      const escrow = await ErcEscrowAccount.new(10000, {from: seller})
 
-    it('owner balance must be equal with total supply', async () => {
-        const balance = await token.balanceOf(owner)
-        assert(balance.eq(initalBalance))
+      contracts = {
+        escrow
+      }
+      console.log('-check point-1-', util.inspect(contracts, false, null, true))
     })
-    it('after transfor should be equal total', async () => {
-        await token.transfer(user1, 99, {from: owner})
-        const balanceOwner = await token.balanceOf(owner)
-        const balanceUser1 = await token.balanceOf(user1)
-        //console.log('---', {balanceOwner, balanceUser1})
-        assert(initalBalance.eq(balanceOwner.plus(balanceUser1)))
+    it('create escrow will return valid id', async () => {
+
     })
 })

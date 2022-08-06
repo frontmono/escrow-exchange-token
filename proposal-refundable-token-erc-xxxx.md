@@ -95,7 +95,7 @@ interface ERC2001 /* is ERC165 */ {
     ///   - _exchangeRate: exchange rate of 1-payable token vs N-issuing token
     /// @return escrow ID.
     /// @Note: other constraint can be implemented on implementation.
-    function escrowAccountCreate(uint256 _period, uint256 _totalSupply, uint256 _exchangeRate) external payable returns (uint256);
+    function escrowAccountCreate(uint256 _period, uint256 _totalFund, uint256 _exchangeRate) external payable returns (uint256);
 
 
     /// @notice exchange tokens from owner of _escrowId and from address.
