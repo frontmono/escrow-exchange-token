@@ -1,7 +1,10 @@
 pragma solidity ^0.4.24;
 
+import "./ErcEscrowAccount.sol";
 
-contract ERC20EscrowMockup {
+
+
+contract ERC20Mockup {
     mapping(address => uint256) _balances;
     uint256 _totalSupply;
     address _owner;
@@ -33,5 +36,21 @@ contract ERC20EscrowMockup {
         require(fromBalance >= amount, "ERC20: transfer amount exceeds balance");
         _balances[from] = fromBalance - amount;
         _balances[to] += amount;
+    }
+    /*
+      From there, escrow related function
+    */
+    function escrowFund(address to, uint256 amount) public returns (bool) {
+
+        ErcEscrowAccount(to).escrowFund(msg.sender, amount);
+        _transfer(msg.sender, to, amount);
+
+        return true;
+    }
+    function escrowRefund(address to, uint256 amount) public returns (bool) {
+        ErcEscrowAccount(to).escrowRefund(msg.sender, amount);
+        _transfer(to, msg.sender, amount);
+
+        return true;
     }
 }
