@@ -11,7 +11,6 @@ contract ErcEscrowAccount {
 
     enum State { Inited, Running, Success, Failed }
 
-
     struct EscrowStatus {
         uint256 numberOfBuyer;
         uint256 fundTotal;
@@ -24,7 +23,6 @@ contract ErcEscrowAccount {
     address _addrBuyer;
     address _addrEscrow;
     address _addrCreator;
-
 
     EscrowStatus _status;
 
@@ -49,14 +47,9 @@ contract ErcEscrowAccount {
     function helper_bigInt256(uint256 _u256Val) public view returns (uint256) {
         return _u256Val;
     }
+
     function helper_numberOfBuyers() public view returns (uint256) {
         return _status.numberOfBuyer;
-    }
-
-
-
-    function balanceOf(address account) public view returns (uint256) {
-        return _balances[account].buyer;
     }
 
     function _updateRunningState() {
@@ -77,21 +70,31 @@ contract ErcEscrowAccount {
         }else if(_status.state == State.Failed){
           return "Failed";
         }
-
         return "unknown state";
     }
 
 
-
+    function balanceOf(address account) public view returns (uint256) {
+        return _balances[account].buyer;
+    }
 
     function escrowBalanceOf(address account) public view returns (uint256 o_buyer, uint256 o_seller) {
         o_buyer = _balances[account].buyer;
         o_seller = _balances[account].seller;
     }
 
-
-
-    function escrowFund(address to, uint256 amount) public returns (bool) {
+    function escrowComplainaceDescription() external view returns (string)
+    {
+        return 'totalNumberOfInvestor:2';
+    }
+    function escrowErrorCodeDescription(uint32 _code) external view returns (string)
+    {
+        if(_code == 0){
+            return 'success';
+        }
+        return 'Unknown code';
+    }
+    function escrowFund(address to, uint256 amount) public returns (uint32) {
         require(amount > 0, "amount is too small");
         if(msg.sender == _addrSeller){
 
@@ -130,10 +133,10 @@ contract ErcEscrowAccount {
 
 
 
-        return true;
+        return 0;
     }
 
-    function escrowRefund(address to, uint256 amount) public returns (bool) {
+    function escrowRefund(address to, uint256 amount) public returns (uint32) {
         require(amount > 0, "amount is too small");
         require(_status.state == State.Running || _status.state == State.Failed, "must be running state to refund");
         require(msg.sender == _addrBuyer, "must be buyer contract to refund");
@@ -151,9 +154,10 @@ contract ErcEscrowAccount {
         }
 
         _updateRunningState();
+        return 0;
     }
 
-    function escrowWithdraw() public returns (bool) {
+    function escrowWithdraw() public returns (uint32) {
         address from = msg.sender;
 
         if(from == _addrCreator){
@@ -172,7 +176,7 @@ contract ErcEscrowAccount {
         }
 
         delete _balances[from];
-
+        return 0;
     }
 
 

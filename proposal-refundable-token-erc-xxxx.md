@@ -14,7 +14,7 @@ A standard interface for Refundable Token.
 
 ## Abstract
 
-The value of security token can be total sum of linked currency’s value. For example, in STO process, issuer can be invested with real currency from buyers(or investors) and transfers issuing tokens to buyers. If offering process is successfully completed, there is no issue. But buyers can change their plan, or offering is failed(or canceled) cause of mis-fitting the compliance rules or other rules. There is no way guarantee to payback(refund) to buyer in on-chain network.
+The value of security token can be total sum of linked currency’s value. For example, Token Issuing  process, issuer can receive money from  buyers( or investors) and transferes issuing token to buyers. If offering process is successfully completed, there is no issue. But buyers can change their plan, or offering is failed(or canceled) cause of mis-fitting the compliance rules or other rules. There is no way guarantee to payback(refund) to buyer in on-chain network.
 
 We have suggest this process make possible in on-chain network with payable currency like token(ex: USDT)
 
@@ -29,178 +29,158 @@ Note: Refund is only available in certain conditions(ex: period, oracle value et
 
 ## Requirements
 
-Exchanging tokens with security, requires having a escrow like standard way in on-chain network.
+Exchanging tokens, requires having an escrow like standard way in on-chain network.
 
 The following stand interfaces should be provided on ERC-2000 interface.
   - MUST support querying texted based compliance for transactions. ex: period, max number of buyers, minimum and maximum tokens to hold, refund period, etc.
   - exchange(or purchase) with success or failed return code.
   - refund(or cancel transaction) with success or failed return code.
+  - withdraw when escrow process has been succuess.
 
 
 ## Specification
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC 2119.
 
-**Every ERC-2001 compliant contract must implement the `ERC2001` and `ERC165` interfaces** (subject to "caveats" below):
+There are 3 contracts for the escrow process: `Buyer Contract`, `Seller Contract` and `Escrow Contract`.
+ - Buyer Contract: Buyers will pay to escrow account to exchange with `Seller Token`.
+ - Seller Contract: An seller will pay to escrow account to exchange with `Buyer Token`.
+ - Escrow Contract: Will be created by seller. Agent to co-operate between buyers and seller based on contraint rules. Instead of simple address maped balance variable in ERC20 tokens, this balance should have (Seller, Buyer).
+
+**Every ERC-2000 compliant contract must implement the `ERC2000` interfaces**
 
 ```solidity
 pragma solidity ^0.4.20;
 
-/// @title ERC-2001 Refundable Token Standard
-///  Note: the ERC-165 identifier for this interface is 0x keccak256 - TODO.
-///  We will use balance in comment as following
-interface ERC2001 /* is ERC165 */ {
+/// @title ERC-2000 Refundable Token Standard
 
-    /// @dev This emits when buyer purchase token with owned payable token.
-    ///   _from: buyer address
-    ///   _escrowId: specify offering event. can be zero in STO process, but in payable token, can be used to distinguish for escrow id
-    ///   _valuePayed: payable token amount
-    ///   _valueObtain: earned of current token by this event.
-    event EscrowPurchase(address _from, uint256 _escrowId, uint256 _valuePayed, uint256 _valueObtain);
-
-    /// @dev This emits when buyer refund token.
-    event EscrowRefund(address _from, uint256 _escrowId, uint256 _valuePayed, uint256 _valueObtain);
-
-    /// @dev This emits when escrow is finished.
-    ///   _code: if 0(zero), it means success, but otherwise, shows reason.
-    ///   _description: shows description of finish reason(success or other failure reasons)
-    event EscrowFinished(uint256 _escrowId, bytes4 _code, string _description);
+interface ERC2000 {
 
     /// @notice escrow balance of owner
     /// @dev assigned to the zero address are considered invalid, and this
     ///   function throws for queries about the zero address.
-    ///   if escrowId does not exist, must throw error.
+    ///   in case of escrow contract,
+    ///       recommened return buyer's token balance.
+    ///       used for backward compatibility with ERC20 standard.
     /// @param
     ///   - _owner: An address for whom to query the balance
-    ///   - _escrowId: escrow account id
-    /// @return amount of current escrow account balance. First is payed, and seconds is hold tokens
-    function escrowBalanceOf(address _owner, uint256 _escrowId) external view returns (uint256, uint256);
+    /// @return amount of current escrow account balance. can be seller's token or buyer's token
+    function balanceOf(address account) public view returns (uint256);
 
-    /// simple query to return simple description of compilance.
-    function escrowComplainaceDescription() external view returns (string _description);
+
+    /// @notice escrow balance of owner
+    /// @dev assigned to the zero address are considered invalid, and this
+    ///   function throws for queries about the zero address.
+    /// @param
+    ///   - _owner: An address for whom to query the balance
+    /// @return amount of current escrow account balance. First is buyer token , and seconds is seller token
+    function escrowBalanceOf(address account) public view returns (uint256, uint256);
+
+
+    /// @notice simple query to return simple description of compilance.
+    /// @dev must implemented in Escrow-Contract and optional for other contracts.
+    function escrowComplainaceDescription() external view returns (string);
 
     /// simple query to return string based on error code. if code is zero,return can be 'success'
-    function escrowErrorCodeDescription(bytes4 _code) external view returns (string _description);
+    /// @dev must implemented in Escrow-Contract and optional for other contracts.
+    function escrowErrorCodeDescription(uint32 _code) external view returns (string);
 
 
-    /// @notice create escrow account.
+    /// @notice deposit fund(token) into escrow account.
     /// @dev
-    ///   - created escrow account of [msg.sender].
-    ///   - if escrow id is 0, this means in payable contract. payable contract will generate unique ID.
-    ///   - in case of issuing contract, [msg.sender] should have enough balance of total supply. and this supply is locked until escrow account is closed.
+    ///   - seller/buyer contract should call escrow contract's function before _transfer.
+    ///   - escrow contract should update (Seller, Buyer) balance.
+    ///   - seller can call this function to fund intial supply.
     /// @param
-    ///   - _escrowId: escrow id
-    ///   - _period: escrow period in seconds
-    ///   - _totalSupply: number of tokens to be exchange
-    ///   - _exchangeRate: exchange rate of 1-payable token vs N-issuing token
-    /// @return escrow ID.
-    /// @Note: other constraint can be implemented on implementation.
-    function escrowAccountCreate(uint256 _period, uint256 _totalFund, uint256 _exchangeRate) external payable returns (uint256);
-
-
-    /// @notice exchange tokens from owner of _escrowId and from address.
-    /// @dev
-    ///   - if escrowId is not valid, should throw error.
-    ///   - token can be calculated from _valuePayed x exchange_rate
-    ///   - decrease escrow owners balance, and increase [msg.sender]'s balance
-    ///   - Should check conditions to perform. ex: if period is done, will return failure  
-    /// @param
-    ///   - _escrowId: escrow id
+    ///   - to:
+    ///     In case of buyer/seller contract, must be escrow contract address.
+    ///     In case of escrow contract, must be user address who is triggered this transaction.
     ///   - _valuePayed: payable token amount
     /// @return reason code. 0 is success, otherwise is failure code.
-    function escrowPurchase(uint256 _escrowId, uint256 _valuePayed) external payable returns (bytes4);
+    function escrowFund(address to, uint256 amount) public returns (uint32);
 
 
-    /// @notice [msg.sender] request refund from previous purchase.
+    /// @notice refund from escrow account.
     /// @dev
-    ///   - if escrowId is not valid, should throw error.
-    ///   - token can be calculated from _valuePayed x exchange_rate
-    ///   - increase escrow owners balance, and decrease [msg.sender]'s balance
-    ///   - Should check conditions to perform. ex: if period is done, will return failure  
-    ///   - if all success, should emit `EscrowPurchase` event
+    ///   - seller/buyer contract should call escrow contract's function before _transfer.
+    ///   - escrow contract should update (Seller, Buyer) balance.
+    ///   - seller should not call this function.
     /// @param
-    ///   - _escrowId: escrow id
+    ///   - to:
+    ///     In case of buyer/seller contract, must be escrow contract address.
+    ///     In case of escrow contract, must be user address who is triggered this transaction.
     ///   - _valuePayed: payable token amount
     /// @return reason code. 0 is success, otherwise is failure code.
-    function escrowRefund(uint256 _escrowId, uint256 _valuePayed) external payable returns (bytes4);
+    function escrowRefund(address to, uint256 amount) public returns (uint32);
 
-    /// @notice request escrow finish
+    /// @notice widraw token from escrow account.
     /// @dev
-    ///   - if escrowId is not valid, should throw error.
-    ///   - [msg.sender] must be escrow owner
-    ///   - to be success, should be meet constraint(ex: period)
-    ///   - when it is done(success or failed), all escrow balances should be cleaned and emit EscrowFinished    ///   
-    /// @param
-    ///   - _escrowId: escrow id
-    ///   - _code: 0  is success, otherwise, issuer cancel(or close) this escrow account
-    ///   - _hash: if code is 0, this hash should be match with escrow balance
+    ///   - must implemented in Escrow-Contract and optional for other contracts.
+    ///   - buyer is only avaiable when escrow is success, otherwise should call escrowRefund.
+    ///   - in case of escrow failed, seller can refund seller-token.
+    ///   - if escrow is success, seller and buyser can get exchanged token on their own wallet.
     /// @return reason code. 0 is success, otherwise is failure code.
-    function escrowFinish(uint256 _escrowId, bytes4 _code, uint256 _hash) external payable returns (bytes4);
+    function escrowWithdraw() public returns (uint32);
 
 }
 
-interface ERC165 {
-    /// @notice Query if a contract implements an interface
-    /// @param interfaceID The interface identifier, as specified in ERC-165
-    /// @dev Interface identification is specified in ERC-165. This function
-    ///  uses less than 30,000 gas.
-    /// @return `true` if the contract implements `interfaceID` and
-    ///  `interfaceID` is not 0xffffffff, `false` otherwise
-    function supportsInterface(bytes4 interfaceID) external view returns (bool);
-}
+
 ```
 
 ## Rationale
 The standard proposes interfaces on top of the ERC-20 standard.
 Each functions should include constraint check logic.
-In case of payable token, should invoke ERC165 interface before their own logic.
-In case of issuer token, should implemented internal constraint logic such as period, maximum investors, etc.
+In `escrow-contract`, should implemented internal constraint logic such as period, maximum investors, etc.
+The `buyer-contract` and `seller-contract` should not have contraint rules.
 
 Let's discuss following functions.
 
-1. **`escrowAccountCreate`**
+1. **`constructor`**
 
-The issuing token holder can call this function. The parameters are very basic(period, total supply and exchange rate).
-Other constrains can be implemented on function body. Function body should implements following.
+In escrow contract, will define success/failure conditions. It means contraint rules might not be changed for ever(might be changed after created for market exchange rate.), so it guarantee escrow policy.
 
-- add constraint rules on this escrow account. basic rule(ex: period) must be implemented.
-- create temporary balance sheet for escrow process.
-- credit own token supply on escrow account. Owner could not use this fund until escrow process is finished.(In other words, LOCKED).
+2. **`escrowFund`**
 
+This function should run differently for buyer and seller.
 
-When this process is success, can call specific function on payable token contract. This function create similar as above but apply contract address.
-Payable contract does not have constraints rules(because it is general valuable token), but every transactions should call issuing token function to validate constraints.
+[seller]
+- The seller call this function to be escrow-ready. Seller's token ownership(balance) will be transfered to escrow-contract and escrow balance will be (Seller: amount, Buyer: 0).
+- The seller can call this function multiple times depends on implementation, but prefered just one time.
 
-2. **`escrowPurchase & escrowRefund`**
+[buyer]
+- When escrow is in running state(not success or failed), the buyer can call this function to deposit fund into escrow account.
+- the escrow balance will be (Seller: amount x exchange-rate, Buyer: amount). The `Buyer: amount` will be used for refund process.
+- Once it is success, the seller's escrow balance will be (Seller: -= amount x exchange-rate, Buyer: += amount).
 
-The buyer calls this function in payable token only. Smart contract code calls issuer contract via ERC165 interface, and return code is 0(Success), can continue process(ex: update escrow balance).
-When fund is deposit on escrow balance sheet, this token is locked.
-For example, the buyer has 100 payable tokens and purchased 1000 issuing token by 10 payable token(in case of exchange rate is 100).
-In buyers wallet balance should shows 90 token. If escrow failed, escrow process should return 10 token to buyer.
-If escrow process is successfully done, the buyer should have 1000 token balance on issuer contract, but fixed 90 tokens in payable token.
+3. **`escrowRefund`**
 
-3. **`escrowFinish`**
-
-Only escrow creator should call this function.
+This function should be invoked by buyers only.
+The buyer can call this function in running state only. In state of failed or success, could not be success.
+The escrow balances of seller and buyer will be updated reverse way of `escrowFund`
 
 
-## Security concern
+4. **`escrowWithdraw`**
 
-- The buyer should be available refund anytime until escrow finished. Because if issuer does not call `escrowFinish` forever, there is no way to get it back. Developer should be careful this logic.
-- Should deal with invalid call of functions. some functions can be invoked by user directly or should be called by payable contract code via ERC165 interface. So make sure [msg.sender] is user or contract.
+Buyers and seller can withdraw tokens from escrow account to their own account.
+The following processes are recommended.
+- Buyer can withraw in escrow-success state only. Ownership of seller tokens can be tranfered to buyer from escrow-contract. In escrow-failed state, buyer should call `escrowRefund` function.
+- When the seller call this function in escrow-success state, remained seller token will be transfered to seller, and earned buyer's token will be also tranfered from escrow-account.
+- In case of escrow-failed, seller only get refund seller token.
+
+
 
 ## Backwards Compatibility
 
-By design ERC-2001 is fully backwards compatible with ERC-20.
+By design ERC-2000 is fully backwards compatible with ERC-20.
 
 
 ## Test Cases & Implementations
 
-(TBD)
+1. [Seller/Buyer Token example](https://github.com/simple-restricted-token/simple-restricted-token-standard/tree/master/contracts/examples/ownership-percentage)
 
-## References
+2. [Escrow contract example](https://github.com/simple-restricted-token/simple-restricted-token-standard/tree/master/contracts/examples/ownership-percentage)
 
-(TBD)
+3. [Unit test example](../LICENSE.md).
 
 ## Copyright
 

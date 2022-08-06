@@ -40,17 +40,22 @@ contract ERC20Mockup {
     /*
       From there, escrow related function
     */
-    function escrowFund(address to, uint256 amount) public returns (bool) {
-
-        ErcEscrowAccount(to).escrowFund(msg.sender, amount);
+    function escrowFund(address to, uint256 amount) public returns (uint32) {
+        uint32 result = ErcEscrowAccount(to).escrowFund(msg.sender, amount);
+        if(result != 0){
+            return result;
+        }
         _transfer(msg.sender, to, amount);
 
-        return true;
+        return 0;
     }
-    function escrowRefund(address to, uint256 amount) public returns (bool) {
-        ErcEscrowAccount(to).escrowRefund(msg.sender, amount);
+    function escrowRefund(address to, uint256 amount) public returns (uint32) {
+        uint32 result = ErcEscrowAccount(to).escrowRefund(msg.sender, amount);
         _transfer(to, msg.sender, amount);
+        if(result != 0){
+            return result;
+        }
 
-        return true;
+        return 0;
     }
 }
